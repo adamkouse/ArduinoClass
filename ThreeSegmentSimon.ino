@@ -145,6 +145,9 @@ void playWinSequence(void)
   0 == Red
   1 == Green
   Anything else == Yellow
+  
+  Arguments:
+    a: The action to show
 */
 void showAction(unsigned int a)
 {
@@ -176,6 +179,10 @@ void showAction(unsigned int a)
 /*
   Display the current set of actions up to lastAction, which is the hightest action that
   the player has successfully gotten to.
+  
+  Arguments:
+    actions: The sequence that make up a game
+    lastAction: The highest number of actions that a player has made it to
 */  
 void showActions(const unsigned int actions[], unsigned int lastAction)
 {
@@ -191,7 +198,11 @@ void showActions(const unsigned int actions[], unsigned int lastAction)
 }
 
 /*
-  Get the player's move.
+  Get the player's move. This function also "debounces" the input. When a button is pressed
+  the contacts inside actually bounce off of each other very briefly then make solid contact.
+  The Arduino is so fast that is able to detect these bounces and may register more than
+  one press when the user actually only presses it once. Debouncing takes care of that.
+
   Returns:
     The switch number that the player has pressed. If no switch is pressed, it returns -1.
 */
@@ -240,6 +251,16 @@ int getPlayerMove(void)
 }
 
 /*
+  This checks for player input. If it is detected, the button press is checked to see
+  if it is the right one. It also checks to see if the player took too long between
+  button presses.
+
+  Arguments:
+    actions: The sequence that make up a game
+    lastAction: The highest number of actions that a player has made it to
+  
+  Returns:
+    false if the player took to long to move or made an incorrect move, true otherwise
 */
 int roundSuccessful(const unsigned int actions[], unsigned int lastAction)
 {
