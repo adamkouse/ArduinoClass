@@ -65,7 +65,7 @@ const unsigned int toneDuration = 400;
 const unsigned int tonePause    = 50;
 
 /* Number of seconds between successive button presses before a player loses */
-const unsigned int moveTimeout  = 5000;
+const unsigned long moveTimeout  = 1000 * 5;
 
 const unsigned int winActions = 6; // Number of actions to win the game.
 
@@ -146,7 +146,7 @@ void playWinSequence(void)
   1 == Green
   Anything else == Yellow
 */
-showAction(unsigned int a)
+void showAction(unsigned int a)
 {
   int led, sound;
 
@@ -174,19 +174,19 @@ showAction(unsigned int a)
 }
 
 /*
-  Display the current set of actions up to currentAction, which is the hightest action that
+  Display the current set of actions up to lastAction, which is the hightest action that
   the player has successfully gotten to.
 */  
-void showActions(const int actions[], unsigned int currentAction)
+void showActions(const unsigned int actions[], unsigned int lastAction)
 {
-  if (currentAction > winActions) {
-    currentAction = winActions;
+  if (lastAction > winActions) {
+    lastAction = winActions;
   }
 
-  for (int i = 0; i <= currentAction; ++i) {
+  for (int i = 0; i < lastAction; ++i) {
     showAction(actions[i]);
   }
-  
+
   return;
 }
 
@@ -195,11 +195,11 @@ void showActions(const int actions[], unsigned int currentAction)
   Returns:
     The switch number that the player has pressed. If no switch is pressed, it returns -1.
 */
-int playerMove(void)
+int getPlayerMove(void)
 {
   int redSwitchState, greenSwitchState, yellowSwitchState;
   int lastRedSwitchState = HIGH, lastGreenSwitchState = HIGH, lastYellowSwitchState = HIGH;
-  int debounceDelay = 10;
+  int debounceDelay = 15;
   
   redSwitchState = digitalRead(redSwitch);
   greenSwitchState = digitalRead(greenSwitch);
@@ -241,23 +241,24 @@ int playerMove(void)
 
 /*
 */
-int roundSuccessful(const int actions[], unsigned int currentAction)
+int roundSuccessful(const unsigned int actions[], unsigned int lastAction)
 {
-  unsigned int timer, playerMove;
+  unsigned int playerMove;
+  unsigned long timer;
   
-  if (currentAction > winActions) {
-    currentAction = winActions;
+  if (lastAction > winActions) {
+    lastAction = winActions;
   }
 
-  for (int i = 0; i <= currentAction; ++i) {
+  for (int i = 0; i < lastAction; ++i) {
     timer = millis();
-    playerMove = playerMove();
-    while (playerMove == -1 && millis() - timer < moveTimeout) {
-      playerMove = playerMove();
+    playerMove = getPlayerMove();
+    while (playerMove == -1 && (millis() - timer) < moveTimeout) {
+      playerMove = getPlayerMove();
     }
     
     if (playerMove == -1) {
-      return 0; // The player took too long between button presses.
+      return false; // The player took too long between button presses.
     }
     
     showAction(playerMove);
@@ -265,26 +266,26 @@ int roundSuccessful(const int actions[], unsigned int currentAction)
     switch (playerMove) {
       case red:
         if (actions[i] != red) {
-          return 0;
+          return false;
         }
         break;
       case green:
         if (actions[i] != green) {
-          return 0;
+          return false;
         }
         break;
       case yellow:
         if (actions[i] != yellow) {
-          return 0;
+          return false;
         }
         break;
       default:
-        return 0;
+        return false;
     }
   }
   
   // If we've gotten this far, the player successfully passed the round.
-  return 1;
+  return true;
 }
   
 /*
@@ -325,8 +326,8 @@ void setup()
 */
 void loop()
 {
-  int actions[winActions], playerMoves[winActions];
-  int i;
+  unsigned int actions[winActions];
+  unsigned int rnd;
 
   // Set up the random number generator so the player gets a different sequence every time
   randomSeed(analogRead(3));
@@ -336,16 +337,18 @@ void loop()
     actions[i] = random(0, 3); // The beginning integer is inclusive, the ending integer, exclusive.
   }
 
-  for (i = 0; i < winActions; ++i) {
-    showActions(actions, i);
-    if (!roundSuccessful(actions, i)) {
+  for (rnd = 1; rnd <= winActions; ++rnd) {
+    showActions(actions, rnd);
+    if (!roundSuccessful(actions, rnd)) {
       break;
     }
 
     delay(1000);
   }
   
-  if (i == winActions) {
+  // winActions + 1 because the for loop above will increment one past
+  // winActions then the test will fail
+  if (rnd == winActions + 1) {
     playWinSequence();
   } else {
     playLoseSequence();
