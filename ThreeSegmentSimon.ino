@@ -2,7 +2,7 @@
   Three Segment Simon
   
   Created by Adam Kouse
-  October, 2013
+  February, 2014
   
   A version of Simon by Milton Bradley with three segments instead of four. I made
   it three segments because I could build this project completely from parts
@@ -67,7 +67,7 @@ const unsigned int tonePause    = 50;
 /* Number of seconds between successive button presses before a player loses */
 const unsigned long moveTimeout  = 1000 * 5;
 
-const unsigned int winActions = 6; // Number of actions to win the game.
+const unsigned int winActions = 10; // Number of actions to win the game.
 
 
 /** Functions */
@@ -351,6 +351,8 @@ void loop()
   unsigned int rnd;
 
   // Set up the random number generator so the player gets a different sequence every time
+  // If nothing is connected to A3 it will "float" somewhere between 0-5v. This value is
+  // fed into the random number generator.
   randomSeed(analogRead(3));
 
   // Populate the actions array with pseudo-random values
